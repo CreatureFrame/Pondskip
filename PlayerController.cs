@@ -16,6 +16,16 @@ public class PlayerController : MonoBehaviour {
 	public bool Sunk;
 	public bool RespawnLoop;
 
+	public GameObject particledash;
+
+	public GameObject lastsave;
+	Transform respawnmark;
+
+	float xbordermin = -30;
+	float xbordermax = 30;
+	float zbordermin = -30;
+	float zbordermax = 30;
+
 
 	void Start(){
 		currentDashTime = maxDashTime;
@@ -24,7 +34,9 @@ public class PlayerController : MonoBehaviour {
 	void Update() {
 		if (!Sunk){
 			Movement();
+			LevelEdges();
 			Dash();
+			CheckIfDashing();
 			if (goingtosink <= 0){
 				if (!RespawnLoop){
 					Debug.Log("start respawn");
@@ -33,51 +45,6 @@ public class PlayerController : MonoBehaviour {
 				}
 			}
 		}
-
-
-		//CODE VARIATIONS
-		#region CodeVars
-
-		#region Controller Ver2 Xtras
-//		http://answers.unity3d.com/questions/803365/make-the-player-face-his-movement-direction.html
-//		The way it was done was by replacing transform.rotation = Quaternion.LookRotation(movement); with transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(movement), 0.15F);
-
-//		if(movement != Vector3.zero) transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(movement.normalized), 0.2f);
-		#endregion
-
-
-		#region Controller Ver1
-
-		//this one didnt face direction
-
-		//	private Vector3 moveDirection = Vector3.zero;
-		//	public CharacterController controller;
-//		public float gravity = 20.0F;
-//		public float speed = 6.0F;
-
-		//under start
-		// Store reference to attached component
-		//		controller = GetComponent<CharacterController>();
-
-
-		//under update
-//		// Character is on ground (built-in functionality of Character Controller)
-//		if (controller.isGrounded) 
-//		{
-//			// Use input up and down for direction, multiplied by speed
-//			moveDirection = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
-//			moveDirection = transform.TransformDirection(moveDirection);
-//			moveDirection *= speed;
-//		}
-//		// Apply gravity manually.
-//		moveDirection.y -= gravity * Time.deltaTime;
-//		// Move Character Controller
-//		controller.Move(moveDirection * Time.deltaTime);
-
-		#endregion
-
-		#endregion
-
 	}
 
 
@@ -99,18 +66,31 @@ public class PlayerController : MonoBehaviour {
 			goingtosink -= 1f * Time.deltaTime;
 		}
 
+
+	}
+
+	void CheckIfDashing(){
+
 		if (currentDashTime < maxDashTime)
 		{
 			Vector3 dashing = new Vector3(0.0f, 0.0f, 1.0f);
 			transform.Translate (dashing.normalized * dashspeed * Time.deltaTime, Space.Self);
 			currentDashTime += dashStoppingSpeed;
 		}
+	}
 
+	void LevelEdges(){
+
+		float newX = Mathf.Clamp(transform.position.x, xbordermin, xbordermax);
+		transform.position = new Vector3(newX, transform.position.y, transform.position.z);
+		float newZ = Mathf.Clamp(transform.position.z, zbordermin, zbordermax);
+		transform.position = new Vector3(transform.position.x, transform.position.y, newZ);
 	}
 
 
 	void Dash(){
 		if (Input.GetKeyDown(KeyCode.Space)){
+			DashParts();
 			currentDashTime = 0f;
 			goingtosink = 1f;
 			Debug.Log("restart sink timer");
@@ -125,20 +105,30 @@ public class PlayerController : MonoBehaviour {
 
 	public IEnumerator SunkRespawn(){
 //		while(!IsDashing){
-			Debug.Log("sink start");
-			yield return new WaitForSeconds(5.0f);
-			Debug.Log("sink end");
+		Debug.Log("sink start");
+		yield return new WaitForSeconds(5.0f);
+		Debug.Log("sink end");
 
-			//animation
-			//move camera / flash out
-			//move player
-			//flash in
-			//player on of on off
+		respawnmark = lastsave.gameObject.transform.GetChild(0);
+		transform.position = respawnmark.transform.position;
 
-			goingtosink = 1f;
-			Sunk = false;
-			RespawnLoop = false;
+		//animation
+		//move camera / flash out
+		//move player
+		//flash in
+		//player on of on off
+
+		goingtosink = 1f;
+		Sunk = false;
+		RespawnLoop = false;
 //		}
+	}
+
+
+	void DashParts(){
+		GameObject instanParts;
+		instanParts = (GameObject) Instantiate(particledash, transform.position, transform.rotation);
+		Destroy(instanParts, 1f);
 	}
 			
 
