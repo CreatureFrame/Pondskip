@@ -15,6 +15,7 @@ public class OnLand : MonoBehaviour {
 		if (col.gameObject.tag == "Player"){
 
 			playercont.OnWater = false;
+			playercont.lastsave = this.gameObject;
 
 		}
 	}
